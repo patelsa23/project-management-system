@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jarvis - Project Management System</title>
+  <meta name="description" content="Jarvis keeps every task, owner and deadline in one place, with an AI assistant that spots what's slipping before it slips.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+/* Palette: every color on the page is a shade of green. */
+:root {
+  color-scheme: light;
+  --forest: #0e2c20;
+  --pine: #17452f;
+  --emerald: #1f7a54;
+  --moss: #5d9a6c;
+  --sage: #a3c9a8;
+  --lime: #c4ec7e;
+  --mint: #dcf3e2;
+  --mist: #f2f8f1;
+  --paper: #fbfdf9;
+  --line: #d6e4d7;
+  --muted: #4f6b5b;
+  --radius: 16px;
+  --font: "Hanken Grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--forest);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, p, ul { margin: 0; }
+ul { padding: 0; list-style: none; }
+a { color: inherit; text-decoration: none; }
+button, input { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+:focus-visible { outline: 2px solid var(--emerald); outline-offset: 2px; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-inline: 32px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 100px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+.btn-small { min-height: 40px; padding: 0 20px; font-size: 15px; }
+.btn-dark { background: var(--forest); color: var(--paper); }
+.btn-dark:hover { background: var(--emerald); }
+.btn-lime { background: var(--lime); color: var(--forest); }
+.btn-lime:hover { background: var(--paper); }
+
+/* Brand */
+.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; }
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 50% 8px;
+  background: var(--emerald);
+  color: var(--paper);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1;
+}
+.brand-mark-small { width: 24px; height: 24px; font-size: 13px; }
+
+/* Nav */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgb(251 253 249 / .92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-inner { display: flex; align-items: center; gap: 40px; height: 68px; }
+.nav-links { display: flex; gap: 28px; font-size: 15px; }
+.nav-links a:hover, .nav-login:hover, .footer-links a:hover { color: var(--emerald); }
+.nav-actions { display: flex; align-items: center; gap: 20px; margin-left: auto; font-size: 15px; }
+
+/* Hero: the app preview straddles the light copy area and a forest band. */
+.hero {
+  isolation: isolate;
+  overflow: clip;
+  padding-top: 72px;
+  background: linear-gradient(var(--paper), var(--mist) 420px);
+}
+#product { position: relative; padding-bottom: 96px; }
+#product::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 180px;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: var(--forest);
+}
+.hero-copy {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 64px;
+  align-items: end;
+  margin-bottom: 64px;
+}
+h1 {
+  font-size: clamp(50px, 7vw, 96px);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.lede { font-size: 19px; color: var(--muted); margin-bottom: 22px; }
+.signup {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+}
+.signup:focus-within { border-color: var(--emerald); }
+.signup input {
+  flex: 1;
+  min-width: 0;
+  padding: 0 18px;
+  border: 0;
+  background: none;
+  outline: none;
+}
+.signup input::placeholder { color: var(--muted); }
+.signup .btn { min-height: 44px; }
+.form-note { margin: 12px 0 0 18px; font-size: 14px; color: var(--muted); }
+
+/* App preview */
+.app {
+  display: grid;
+  grid-template-columns: 216px 1fr;
+  min-height: 500px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 30px 70px -30px rgb(14 44 32 / .55);
+  font-size: 14.5px;
+}
+.app-side { padding: 20px 14px; background: var(--forest); color: var(--mint); }
+.app-side-brand { display: flex; align-items: center; gap: 8px; padding: 0 8px; font-weight: 600; color: var(--paper); }
+.app-side-label { margin: 26px 8px 8px; font-size: 12.5px; color: var(--sage); }
+.app-side li { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; }
+.app-side li i { flex: none; width: 10px; height: 10px; border-radius: 3px; }
+.app-side li.is-active { background: var(--pine); color: var(--paper); }
+
+.app-main { min-width: 0; padding: 22px 26px 26px; }
+.app-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.app-title { font-size: 21px; font-weight: 500; letter-spacing: -0.01em; }
+.app-progress { color: var(--muted); font-size: 13.5px; }
+
+.tabs { display: flex; gap: 2px; padding: 3px; background: var(--mist); border-radius: 100px; }
+.tabs button {
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 100px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.tabs button:hover { color: var(--forest); }
+.tabs button[aria-selected="true"] { background: var(--forest); color: var(--paper); }
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--mint);
+  color: var(--pine);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 100px;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  justify-self: start;
+}
+.tag-high { background: var(--pine); color: var(--paper); }
+.tag-medium { background: var(--lime); color: var(--forest); }
+.tag-low { background: var(--mint); color: var(--pine); }
+
+/* List view */
+.row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 130px 64px 76px;
+  gap: 12px;
+  align-items: center;
+  min-height: 46px;
+  border-bottom: 1px solid var(--line);
+}
+.row:last-child { border-bottom: 0; }
+.row-head { min-height: 38px; color: var(--muted); font-size: 12.5px; }
+.row-person { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.row.is-done .row-name { color: var(--muted); text-decoration: line-through; }
+
+.check {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1.5px solid var(--sage);
+  border-radius: 50%;
+  background: none;
+  color: transparent;
+  cursor: pointer;
+}
+.check:hover { border-color: var(--emerald); color: var(--emerald); }
+.check[aria-checked="true"] { background: var(--emerald); border-color: var(--emerald); color: #fff; }
+
+/* Board view */
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(190px, 1fr));
+  gap: 12px;
+  padding-top: 16px;
+  overflow-x: auto;
+}
+.column { padding: 12px; background: var(--mist); border-radius: 12px; }
+.column h3 { margin-bottom: 10px; font-size: 13.5px; font-weight: 500; color: var(--muted); }
+.card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  margin-top: 8px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.card-foot { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 13px; }
+
+/* Timeline view */
+.timeline-scroll { overflow-x: auto; }
+.timeline { min-width: 640px; padding-top: 6px; }
+.timeline-row {
+  display: grid;
+  grid-template-columns: 170px repeat(6, 1fr);
+  align-items: center;
+  min-height: 42px;
+}
+.timeline-head { min-height: 34px; color: var(--muted); font-size: 12.5px; }
+.timeline-name { padding-right: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar {
+  height: 24px;
+  margin-inline: 2px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 24px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.bar-done { background: var(--mint); color: var(--pine); }
+.bar-doing { background: var(--emerald); color: #fff; }
+.bar-todo { background: var(--lime); color: var(--forest); }
+
+/* Section shared */
+.section-title {
+  font-size: clamp(36px, 4.6vw, 62px);
+  font-weight: 300;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.eyebrow { margin-bottom: 14px; font-weight: 500; color: var(--lime); }
+
+/* Why: open columns divided by hairlines, not boxed cards */
+.why { padding: 110px 0; }
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  margin-top: 60px;
+}
+.why-grid article { padding-top: 18px; border-top: 2px solid var(--forest); }
+.why-grid h3 { margin-bottom: 10px; font-size: 20px; font-weight: 500; letter-spacing: -0.01em; }
+.why-grid p { color: var(--muted); font-size: 16px; }
+
+/* Ask Jarvis */
+.ask { padding: 110px 0; background: var(--pine); color: var(--paper); }
+.ask-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 72px;
+  align-items: center;
+}
+.ask-lede { margin: 22px 0 30px; color: var(--mint); font-size: 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 9px 18px;
+  border: 1px solid var(--moss);
+  border-radius: 100px;
+  background: none;
+  color: var(--paper);
+  font-size: 15px;
+  cursor: pointer;
+}
+.chip:hover { border-color: var(--lime); }
+.chip[aria-pressed="true"] { background: var(--lime); border-color: var(--lime); color: var(--forest); }
+.chip:focus-visible { outline-color: var(--lime); }
+
+.chat {
+  display: grid;
+  gap: 14px;
+  min-height: 330px;
+  align-content: start;
+  padding: 24px;
+  background: var(--paper);
+  border-radius: 20px;
+  color: var(--forest);
+  font-size: 16px;
+}
+.chat-label { color: var(--muted); font-size: 13px; }
+.bubble-you {
+  justify-self: end;
+  max-width: 85%;
+  padding: 10px 16px;
+  background: var(--mint);
+  border-radius: 16px 16px 4px 16px;
+}
+.bubble-jarvis { display: grid; grid-template-columns: 24px 1fr; gap: 12px; }
+.bubble-jarvis p + p, .bubble-jarvis p + ul, .bubble-jarvis ul + p { margin-top: 8px; }
+.bubble-jarvis ul { display: grid; gap: 6px; padding-left: 18px; list-style: disc; }
+.bubble-jarvis li::marker { color: var(--emerald); }
+
+/* Teams */
+.teams { padding: 110px 0; background: var(--mist); }
+.team-rows { margin-top: 52px; border-bottom: 1px solid var(--sage); }
+.team-rows li {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: baseline;
+  padding: 24px 0;
+  border-top: 1px solid var(--sage);
+}
+.team-name { font-size: clamp(28px, 3vw, 40px); font-weight: 300; letter-spacing: -0.02em; }
+.team-use { color: var(--muted); }
+
+/* CTA */
+.cta { padding: 110px 0; background: var(--forest); color: var(--paper); }
+.cta-inner { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 36px; }
+.cta h2 {
+  max-width: 13em;
+  font-size: clamp(40px, 5.6vw, 76px);
+  font-weight: 300;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.cta .btn:focus-visible { outline-color: var(--lime); }
+
+/* Footer */
+.footer { padding: 30px 0; background: var(--forest); color: var(--mint); border-top: 1px solid var(--pine); font-size: 15px; }
+.footer-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 24px; }
+.footer-links a:hover { color: var(--lime); }
+
+/* Tablet */
+@media (max-width: 960px) {
+  .nav-links { display: none; }
+  .hero { padding-top: 52px; }
+  .hero-copy { grid-template-columns: 1fr; gap: 28px; margin-bottom: 48px; }
+  .hero-side { max-width: 560px; }
+  #product { padding-bottom: 72px; }
+  .app { grid-template-columns: 1fr; }
+  .app-side { display: none; }
+  .why-grid { grid-template-columns: repeat(2, 1fr); }
+  .ask-grid { grid-template-columns: 1fr; gap: 44px; }
+  .why, .ask, .teams, .cta { padding: 80px 0; }
+}
+
+/* Phone */
+@media (max-width: 600px) {
+  .wrap { padding-inline: 16px; }
+  .nav-inner { height: 60px; }
+  .nav-actions { gap: 14px; }
+  .signup { flex-direction: column; padding: 0; background: none; border: 0; gap: 8px; }
+  .signup input { min-height: 48px; background: #fff; border: 1px solid var(--line); border-radius: 100px; }
+  .signup input:focus { border-color: var(--emerald); }
+  .signup .btn { min-height: 48px; }
+  .form-note { margin-left: 0; text-align: center; }
+  .app { min-height: 0; border-radius: 16px; }
+  .app-main { padding: 16px; }
+  .tabs { width: 100%; }
+  .tabs button { flex: 1; padding-inline: 8px; }
+  .row { grid-template-columns: 24px minmax(0, 1fr) 26px 52px; gap: 10px; }
+  .row-person span:last-child, .row > .tag, .row-head > :nth-child(5) { display: none; }
+  .row-head > :nth-child(3) { visibility: hidden; }
+  .why-grid { grid-template-columns: 1fr; margin-top: 40px; }
+  .team-rows li { grid-template-columns: 1fr; gap: 4px; padding: 18px 0; }
+  .chat { padding: 18px; }
+  .cta .btn { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .btn { transition: none; }
+}
+  </style>
+</head>
+<body>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="Jarvis home">
+        <span class="brand-mark" aria-hidden="true">J</span>
+        <span>Jarvis</span>
+      </a>
+      <nav class="nav-links" aria-label="Main">
+        <a href="#product">Product</a>
+        <a href="#why">Why Jarvis</a>
+        <a href="#ask">Ask Jarvis</a>
+        <a href="#teams">Teams</a>
+      </nav>
+      <div class="nav-actions">
+        <a class="nav-login" href="#">Log in</a>
+        <a class="btn btn-dark btn-small" href="#signup">Get started</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <section class="hero">
+      <div class="wrap hero-copy">
+        <h1>Every project, one step ahead.</h1>
+        <div class="hero-side" id="signup">
+          <p class="lede">Jarvis keeps every task, owner and deadline in one place, and tells you what's slipping before it slips.</p>
+          <form class="signup" data-signup>
+            <label class="sr-only" for="hero-email">Work email</label>
+            <input id="hero-email" type="email" name="email" placeholder="name@company.com" autocomplete="email" required>
+            <button class="btn btn-dark" type="submit">Get started</button>
+          </form>
+          <p class="form-note" data-signup-note role="status">Free while we're in early access.</p>
+        </div>
+      </div>
+
+      <div class="wrap" id="product">
+        <div class="app" aria-label="Interactive preview of Jarvis with a sample project">
+          <aside class="app-side" aria-hidden="true">
+            <div class="app-side-brand"><span class="brand-mark brand-mark-small">J</span> Jarvis</div>
+            <p class="app-side-label">Projects</p>
+            <ul>
+              <li class="is-active"><i style="background:var(--emerald)"></i>Website relaunch</li>
+              <li><i style="background:var(--lime)"></i>Spring campaign</li>
+              <li><i style="background:var(--sage)"></i>Vendor onboarding</li>
+              <li><i style="background:var(--moss)"></i>Annual summit</li>
+            </ul>
+          </aside>
+          <div class="app-main">
+            <div class="app-head">
+              <div>
+                <h2 class="app-title">Website relaunch</h2>
+                <p class="app-progress" data-progress></p>
+              </div>
+              <div class="tabs" role="tablist" aria-label="Project views">
+                <button role="tab" id="tab-list" aria-controls="panel-list" aria-selected="true">List</button>
+                <button role="tab" id="tab-board" aria-controls="panel-board" aria-selected="false" tabindex="-1">Board</button>
+                <button role="tab" id="tab-timeline" aria-controls="panel-timeline" aria-selected="false" tabindex="-1">Timeline</button>
+              </div>
+            </div>
+            <div class="panel" id="panel-list" role="tabpanel" aria-labelledby="tab-list" data-view="list"></div>
+            <div class="panel" id="panel-board" role="tabpanel" aria-labelledby="tab-board" data-view="board" hidden></div>
+            <div class="panel" id="panel-timeline" role="tabpanel" aria-labelledby="tab-timeline" data-view="timeline" hidden></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="why" id="why">
+      <div class="wrap">
+        <h2 class="section-title">Less chasing.<br>More finishing.</h2>
+        <div class="why-grid">
+          <article>
+            <h3>One source of truth</h3>
+            <p>Tasks, files and decisions live with the project, so nobody has to dig through threads to find the latest.</p>
+          </article>
+          <article>
+            <h3>Clear ownership</h3>
+            <p>Every task has one owner and one due date. Everyone can see who is doing what, and by when.</p>
+          </article>
+          <article>
+            <h3>Early warnings</h3>
+            <p>Jarvis watches dependencies and dates, then flags the work at risk while there's still time to fix it.</p>
+          </article>
+          <article>
+            <h3>Updates that write themselves</h3>
+            <p>Turn live project data into a status report in seconds, instead of rebuilding a slide every Friday.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="ask" id="ask">
+      <div class="wrap ask-grid">
+        <div>
+          <p class="eyebrow">Ask Jarvis</p>
+          <h2 class="section-title">An assistant that already knows the plan.</h2>
+          <p class="ask-lede">Jarvis reads the same tasks and timelines your team does. Ask a question in plain language and get an answer rooted in your actual project.</p>
+          <div class="chips" role="group" aria-label="Example questions">
+            <button class="chip" data-question="risk" aria-pressed="true">What's at risk this week?</button>
+            <button class="chip" data-question="status" aria-pressed="false">Write my status update</button>
+            <button class="chip" data-question="next" aria-pressed="false">What should Theo do next?</button>
+          </div>
+        </div>
+        <div class="chat" aria-live="polite">
+          <p class="chat-label">Sample conversation &middot; Website relaunch</p>
+          <p class="bubble bubble-you" data-chat-question></p>
+          <div class="bubble bubble-jarvis">
+            <span class="brand-mark brand-mark-small" aria-hidden="true">J</span>
+            <div data-chat-answer></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="teams" id="teams">
+      <div class="wrap">
+        <h2 class="section-title">Works the way your team works.</h2>
+        <ul class="team-rows">
+          <li><span class="team-name">Marketing</span><span class="team-use">Campaign calendars, creative reviews and launch checklists</span></li>
+          <li><span class="team-name">Product</span><span class="team-use">Roadmaps, sprints and release plans that stay connected</span></li>
+          <li><span class="team-name">Operations</span><span class="team-use">Repeatable processes, vendor onboarding and approvals</span></li>
+          <li><span class="team-name">Events</span><span class="team-use">Run-of-show timelines, logistics and speaker management</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="wrap cta-inner">
+        <h2>Put your next project in good hands.</h2>
+        <a class="btn btn-lime" href="#signup">Get started</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <a class="brand" href="#top" aria-label="Back to top">
+        <span class="brand-mark" aria-hidden="true">J</span>
+        <span>Jarvis - Project Management System</span>
+      </a>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="#product">Product</a>
+        <a href="#why">Why Jarvis</a>
+        <a href="#ask">Ask Jarvis</a>
+        <a href="#teams">Teams</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+// Sample project behind the app preview. All three views render from this one
+// list, so completing a task in the List view also updates Board and Timeline.
+const tasks = [
+  { name: "Finalize sitemap", person: "Maya Reyes", due: "Nov 5", priority: "Medium", status: "done", start: 0, span: 1 },
+  { name: "Write homepage copy", person: "Theo Lang", due: "Nov 10", priority: "High", status: "doing", start: 0, span: 2 },
+  { name: "Design hero concepts", person: "Priya Nair", due: "Nov 13", priority: "High", status: "doing", start: 1, span: 1 },
+  { name: "Migrate blog content", person: "Jo Kim", due: "Nov 20", priority: "Medium", status: "todo", start: 1, span: 2 },
+  { name: "Build page templates", person: "Sam Ortiz", due: "Nov 27", priority: "High", status: "todo", start: 2, span: 2 },
+  { name: "QA across devices", person: "Lena Fox", due: "Dec 4", priority: "Medium", status: "todo", start: 3, span: 2 },
+  { name: "Launch and announce", person: "Omar Aziz", due: "Dec 11", priority: "Low", status: "todo", start: 5, span: 1 },
+];
+
+const columns = [
+  { status: "todo", label: "To do" },
+  { status: "doing", label: "In progress" },
+  { status: "done", label: "Done" },
+];
+
+const weeks = ["Nov 2", "Nov 9", "Nov 16", "Nov 23", "Nov 30", "Dec 7"];
+
+const checkIcon = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6.5l2.3 2.3 4.7-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+const initials = (person) => person.split(" ").map((part) => part[0]).join("");
+const avatar = (person) => `<span class="avatar" title="${person}">${initials(person)}</span>`;
+const tag = (priority) => `<span class="tag tag-${priority.toLowerCase()}">${priority}</span>`;
+
+function renderList() {
+  const rows = tasks.map((task, index) => {
+    const done = task.status === "done";
+    return `
+      <div class="row ${done ? "is-done" : ""}">
+        <button class="check" role="checkbox" aria-checked="${done}" aria-label="Mark ${task.name} complete" data-toggle="${index}">${checkIcon}</button>
+        <span class="row-name">${task.name}</span>
+        <span class="row-person">${avatar(task.person)}<span>${task.person}</span></span>
+        <span>${task.due}</span>
+        ${tag(task.priority)}
+      </div>`;
+  });
+  return `
+    <div class="row row-head">
+      <span></span><span>Task</span><span>Owner</span><span>Due</span><span>Priority</span>
+    </div>
+    ${rows.join("")}`;
+}
+
+function renderBoard() {
+  const board = columns.map((column) => {
+    const cards = tasks
+      .filter((task) => task.status === column.status)
+      .map((task) => `
+        <div class="card">
+          <span>${task.name}</span>
+          <div class="card-foot">${avatar(task.person)}<span>${task.due}</span></div>
+        </div>`);
+    return `<div class="column"><h3>${column.label} &middot; ${cards.length}</h3>${cards.join("")}</div>`;
+  });
+  return `<div class="board" tabindex="0" aria-label="Tasks by status">${board.join("")}</div>`;
+}
+
+function renderTimeline() {
+  const header = weeks.map((week) => `<span>${week}</span>`).join("");
+  const rows = tasks.map((task) => `
+    <div class="timeline-row">
+      <span class="timeline-name">${task.name}</span>
+      <div class="bar bar-${task.status}" style="grid-column: ${task.start + 2} / span ${task.span}">${initials(task.person)}</div>
+    </div>`);
+  return `
+    <div class="timeline-scroll" tabindex="0" aria-label="Tasks by week">
+      <div class="timeline">
+        <div class="timeline-row timeline-head"><span>Task</span>${header}</div>
+        ${rows.join("")}
+      </div>
+    </div>`;
+}
+
+const doneCount = () => tasks.filter((task) => task.status === "done").length;
+
+function render() {
+  document.querySelector('[data-view="list"]').innerHTML = renderList();
+  document.querySelector('[data-view="board"]').innerHTML = renderBoard();
+  document.querySelector('[data-view="timeline"]').innerHTML = renderTimeline();
+  document.querySelector("[data-progress]").textContent =
+    `${doneCount()} of ${tasks.length} tasks complete · Sample project`;
+}
+
+document.querySelector('[data-view="list"]').addEventListener("click", (event) => {
+  const button = event.target.closest("[data-toggle]");
+  if (!button) return;
+  const index = button.dataset.toggle;
+  const task = tasks[index];
+  if (task.status === "done") {
+    task.status = task.previousStatus || "todo";
+  } else {
+    task.previousStatus = task.status;
+    task.status = "done";
+  }
+  render();
+  document.querySelector(`[data-toggle="${index}"]`).focus();
+});
+
+// Tabs
+const tabButtons = [...document.querySelectorAll('[role="tab"]')];
+
+function selectTab(selected) {
+  tabButtons.forEach((tab) => {
+    const isSelected = tab === selected;
+    tab.setAttribute("aria-selected", isSelected);
+    tab.tabIndex = isSelected ? 0 : -1;
+    document.getElementById(tab.getAttribute("aria-controls")).hidden = !isSelected;
+  });
+}
+
+tabButtons.forEach((tab, index) => {
+  tab.addEventListener("click", () => selectTab(tab));
+  tab.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    const step = event.key === "ArrowRight" ? 1 : -1;
+    const next = tabButtons[(index + step + tabButtons.length) % tabButtons.length];
+    selectTab(next);
+    next.focus();
+  });
+});
+
+// Ask Jarvis: canned answers for now, written against the sample project.
+const answers = {
+  risk: {
+    question: "What's at risk this week?",
+    answer: () => `
+      <p>Two things need attention:</p>
+      <ul>
+        <li><strong>Design hero concepts</strong> (Priya, due Nov 13) can't finish until the homepage copy lands.</li>
+        <li><strong>Write homepage copy</strong> (Theo, due Nov 10) is high priority and is holding up that design work.</li>
+      </ul>
+      <p>Want me to ask Theo for a draft by Friday?</p>`,
+  },
+  status: {
+    question: "Write my status update",
+    answer: () => `
+      <p><strong>Website relaunch:</strong> ${doneCount()} of ${tasks.length} tasks complete.</p>
+      <p>Homepage copy and hero concepts are in progress this week. Page templates start Nov 16, and we're still aiming to launch by Dec 11.</p>
+      <p>Main dependency to watch: design needs final copy by Nov 10.</p>`,
+  },
+  next: {
+    question: "What should Theo do next?",
+    answer: () => `
+      <p>Theo should finish <strong>Write homepage copy</strong> first. It's due Nov 10, and Priya's hero concepts are waiting on it.</p>
+      <p>Nothing else is assigned to Theo right now, so this has their full attention.</p>`,
+  },
+};
+
+const chips = [...document.querySelectorAll("[data-question]")];
+
+function showAnswer(key) {
+  document.querySelector("[data-chat-question]").textContent = answers[key].question;
+  document.querySelector("[data-chat-answer]").innerHTML = answers[key].answer();
+  chips.forEach((chip) => chip.setAttribute("aria-pressed", chip.dataset.question === key));
+}
+
+chips.forEach((chip) => chip.addEventListener("click", () => showAnswer(chip.dataset.question)));
+
+// Sign-up isn't connected to a backend yet, so nothing is stored or sent.
+document.querySelector("[data-signup]").addEventListener("submit", (event) => {
+  event.preventDefault();
+  document.querySelector("[data-signup-note]").textContent = "Thanks! Sign-ups open soon.";
+  event.target.reset();
+});
+
+render();
+showAnswer("risk");
+  </script>
+</body>
+</html>
